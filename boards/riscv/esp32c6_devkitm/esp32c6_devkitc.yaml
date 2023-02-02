@@ -1,0 +1,8 @@
+identifier: esp32c6_devkitc
+name: ESP32-C6
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - uart
