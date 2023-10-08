@@ -37,6 +37,14 @@ extern "C" {
 #define BT_HCI_SYNC_HANDLE_INVALID 0xffff
 #define BT_HCI_PAWR_SUBEVENT_MAX 128
 
+/* Bluetooth spec v5.4 Vol 4, Part E - 5.4.3 HCI Synchronous Data Packets */
+struct bt_hci_sco_hdr {
+	uint16_t handle; /* 12 bit handle, 2 bit Packet Status Flag, 1 bit RFU */
+	uint8_t  len;
+} __packed;
+#define BT_HCI_SCO_HDR_SIZE             3
+
+/* Bluetooth spec v5.4 Vol 4, Part E - 5.4.4 HCI Event Packet */
 struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
@@ -59,6 +67,7 @@ struct bt_hci_evt_hdr {
 #define bt_acl_flags_bc(f)              ((f) >> 2)
 #define bt_acl_handle_pack(h, f)        ((h) | ((f) << 12))
 
+/* Bluetooth spec v5.4 Vol 4, Part E - 5.4.2 ACL Data Packets */
 struct bt_hci_acl_hdr {
 	uint16_t handle;
 	uint16_t len;
@@ -100,12 +109,14 @@ struct bt_hci_iso_ts_data_hdr {
 } __packed;
 #define BT_HCI_ISO_TS_DATA_HDR_SIZE     8
 
+/* Bluetooth spec v5.4 Vol 4, Part E - 5.4.5 HCI ISO Data Packets */
 struct bt_hci_iso_hdr {
 	uint16_t handle; /* 12 bit handle, 2 bit PB flags, 1 bit TS_Flag, 1 bit RFU */
 	uint16_t len; /* 14 bits, 2 bits RFU */
 } __packed;
 #define BT_HCI_ISO_HDR_SIZE             4
 
+/* Bluetooth spec v5.4 Vol 4, Part E - 5.4.1 HCI Command Packet */
 struct bt_hci_cmd_hdr {
 	uint16_t opcode;
 	uint8_t  param_len;
@@ -738,6 +749,8 @@ struct bt_hci_rp_read_bd_addr {
 #define BT_HCI_CODING_FORMAT_TRANSPARENT 0x03
 #define BT_HCI_CODING_FORMAT_LINEAR_PCM  0x04
 #define BT_HCI_CODING_FORMAT_MSBC        0x05
+#define BT_HCI_CODING_FORMAT_LC3         0x06
+#define BT_HCI_CODING_FORMAT_G729A       0x07
 #define BT_HCI_CODING_FORMAT_VS          0xFF
 
 

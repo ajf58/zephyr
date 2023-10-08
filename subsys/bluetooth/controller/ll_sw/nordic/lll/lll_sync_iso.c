@@ -320,8 +320,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
-						      node_rx->pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&lll->ccm_rx, phy,
+							  RADIO_PKT_CONF_PDU_TYPE_BIS,
+							  node_rx->pdu));
 	} else {
 		uint8_t pkt_flags;
 
@@ -488,7 +489,6 @@ static void isr_rx(void *param)
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
-	uint8_t payload_index;
 	uint8_t crc_init[3];
 	uint8_t rssi_ready;
 	uint32_t start_us;
@@ -555,6 +555,8 @@ static void isr_rx(void *param)
 	if (crc_ok) {
 		struct lll_sync_iso_stream *sync_stream;
 		uint16_t stream_handle;
+		uint8_t payload_offset;
+		uint8_t payload_index;
 		struct pdu_bis *pdu;
 
 		/* Check if Control Subevent being received */
@@ -592,21 +594,28 @@ static void isr_rx(void *param)
 			/* TODO: check same CSSN is used in every subevent */
 		}
 
-		/* calculate the payload index in the sliding window */
-		payload_index = lll->payload_tail + (lll->bn_curr - 1U) +
-				(lll->ptc_curr * lll->pto);
+		/* Check payload buffer overflow */
+		payload_offset = (lll->bn_curr - 1U) +
+				 (lll->ptc_curr * lll->pto);
+		if (payload_offset > lll->payload_count_max) {
+			goto isr_rx_done;
+		}
+
+		/* Calculate the payload index in the sliding window */
+		payload_index = lll->payload_tail + payload_offset;
 		if (payload_index >= lll->payload_count_max) {
 			payload_index -= lll->payload_count_max;
 		}
 
+		/* Get reference to stream context */
 		stream_handle = lll->stream_handle[lll->stream_curr];
 		sync_stream = ull_sync_iso_lll_stream_get(stream_handle);
 
-		/* store the received PDU */
+		/* Store the received PDU if selected stream and not already
+		 * received (say in previous event as pre-transmitted PDU.
+		 */
 		if ((lll->bis_curr == sync_stream->bis_index) && pdu->len &&
-		    !lll->payload[bis_idx][payload_index] &&
-		    ((payload_index >= lll->payload_tail) ||
-		     (payload_index < lll->payload_head))) {
+		    !lll->payload[bis_idx][payload_index]) {
 			uint16_t handle;
 
 			if (lll->enc) {
@@ -643,10 +652,23 @@ isr_rx_find_subevent:
 
 	/* Find the next (bn_curr)th subevent to receive PDU */
 	while (lll->bn_curr < lll->bn) {
+		uint8_t payload_offset;
+		uint8_t payload_index;
+
+		/* Next burst number to check for reception required */
 		lll->bn_curr++;
 
+		/* Check payload buffer overflow */
+		payload_offset = (lll->bn_curr - 1U);
+		if (payload_offset > lll->payload_count_max) {
+			/* (bn_curr)th Rx PDU skip subevent */
+			skipped++;
+
+			continue;
+		}
+
 		/* Find the index of the (bn_curr)th Rx PDU buffer */
-		payload_index = lll->payload_tail + (lll->bn_curr - 1U);
+		payload_index = lll->payload_tail + payload_offset;
 		if (payload_index >= lll->payload_count_max) {
 			payload_index -= lll->payload_count_max;
 		}
@@ -666,6 +688,11 @@ isr_rx_find_subevent:
 	/* Find the next repetition (irc_curr)th subevent to receive PDU */
 	if (lll->irc_curr < lll->irc) {
 		if (!new_burst) {
+			uint8_t payload_index;
+
+			/* Increment to next repetition count and be at first
+			 * burst count for it.
+			 */
 			lll->bn_curr = 1U;
 			lll->irc_curr++;
 
@@ -714,6 +741,10 @@ isr_rx_find_subevent:
 	if (lll->ptc_curr < lll->ptc) {
 		lll->ptc_curr++;
 
+		/* TODO: optimize to skip pre-transmission subevent in case
+		 * of insufficient buffers in sliding window.
+		 */
+
 		/* Receive the (ptc_curr)th Rx PDU of bis_curr */
 		bis = lll->bis_curr;
 
@@ -732,6 +763,7 @@ isr_rx_find_subevent:
 			stream_handle = lll->stream_handle[lll->stream_curr];
 			sync_stream = ull_sync_iso_lll_stream_get(stream_handle);
 			if (sync_stream->bis_index <= lll->num_bis) {
+				uint8_t payload_index;
 				uint8_t bis_idx_new;
 
 				lll->bis_curr = sync_stream->bis_index;
@@ -905,7 +937,9 @@ isr_rx_next_subevent:
 		(void)memcpy(lll->ccm_rx.iv, lll->giv, 4U);
 		mem_xor_32(lll->ccm_rx.iv, lll->ccm_rx.iv, access_addr);
 
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, lll->phy, pdu));
+		radio_pkt_rx_set(radio_ccm_iso_rx_pkt_set(&lll->ccm_rx, lll->phy,
+							  RADIO_PKT_CONF_PDU_TYPE_BIS,
+							  pdu));
 
 	} else {
 		struct pdu_bis *pdu;
@@ -1055,8 +1089,7 @@ static void isr_rx_done(void *param)
 		bn = lll->bn;
 		while (bn--) {
 			if (lll->payload[bis_idx][payload_tail]) {
-				node_rx =
-					lll->payload[bis_idx][payload_tail];
+				node_rx = lll->payload[bis_idx][payload_tail];
 				lll->payload[bis_idx][payload_tail] = NULL;
 
 				iso_rx_put(node_rx->hdr.link, node_rx);

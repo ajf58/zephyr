@@ -141,11 +141,12 @@ void z_arm64_secondary_start(void)
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
+
+	z_arm64_mm_init(false);
+
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	z_arm64_safe_exception_stack_init();
 #endif
-
-	z_arm64_mm_init(false);
 
 #ifdef CONFIG_SMP
 	arm_gic_secondary_init();
@@ -190,7 +191,7 @@ static void broadcast_ipi(unsigned int ipi)
 		uint64_t target_mpidr = cpu_map[i];
 		uint8_t aff0;
 
-		if (mpidr == target_mpidr || mpidr == INV_MPID) {
+		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 

@@ -17,6 +17,8 @@
 
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DIRAM_I_START  0x40378000
+/* SRAM_IRAM_END is equivalent 2nd stage bootloader iram_loader_seg
+   start address (that should not be overlapped) */
 #define SRAM_IRAM_END       0x403BA000
 #define I_D_SRAM_OFFSET     (SRAM_DIRAM_I_START - SRAM_DRAM_START)
 
@@ -55,16 +57,30 @@
 #define IROM_SEG_LEN FLASH_SIZE
 #endif
 
+#ifdef CONFIG_SOC_ESP32S3_PROCPU
+#define APPCPU_IRAM_SIZE CONFIG_ESP32S3_APPCPU_IRAM
+#define APPCPU_DRAM_SIZE CONFIG_ESP32S3_APPCPU_DRAM
+#else
+#define APPCPU_IRAM_SIZE 0x0
+#define APPCPU_DRAM_SIZE 0x0
+#endif
+
 #define IROM_SEG_ALIGN 0x10000
+
+/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+ * Executing directly from LMA is not possible. */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
 MEMORY
 {
   mcuboot_hdr (RX): org = 0x0, len = 0x20
   metadata (RX): org = 0x20, len = 0x20
   ROM (RX): org = 0x40, len = FLASH_SIZE - 0x40
-  iram0_0_seg(RX): org = SRAM_IRAM_ORG, len = SRAM_IRAM_SIZE
+  iram0_0_seg(RX): org = SRAM_IRAM_ORG, len = SRAM_IRAM_SIZE - APPCPU_IRAM_SIZE
+  dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = DRAM0_0_SEG_LEN - APPCPU_DRAM_SIZE
+
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
-  dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = DRAM0_0_SEG_LEN
 
   /* DROM is the first segment placed in generated binary.
    * MCUboot binary for ESP32 has image header of 0x20 bytes.
@@ -79,6 +95,7 @@ MEMORY
 #if defined(CONFIG_ESP_SPIRAM)
   ext_ram_seg(RWX): org = EXT_RAM_ORG, len = CONFIG_ESP_SPIRAM_SIZE
 #endif
+
   /* RTC fast memory (executable). Persists over deep sleep.
    */
   rtc_iram_seg(RWX): org = 0x600fe000, len = 0x2000
@@ -205,11 +222,6 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
-   * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
   #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
@@ -217,7 +229,6 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */

@@ -25,52 +25,26 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define SLOT1_PARTITION		slot1_partition
 #define SLOT2_PARTITION		slot2_partition
 #define SLOT3_PARTITION		slot3_partition
+#define SLOT4_PARTITION		slot4_partition
+#define SLOT5_PARTITION		slot5_partition
 
-BUILD_ASSERT(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 1 ||
-	     (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2 &&
-	      FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
-	      FIXED_PARTITION_EXISTS(SLOT3_PARTITION)),
+/* SLOT0_PARTITION and SLOT1_PARTITION are not checked because
+ * there is not conditional code that depends on them. If they do
+ * not exist compilation will fail, but in case if some of other
+ * partitions do not exist, code will compile and will not work
+ * properly.
+ */
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
+BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT2_PARTITION) &&
+	     FIXED_PARTITION_EXISTS(SLOT3_PARTITION),
 	     "Missing partitions?");
-
-#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD) &&		\
-	!(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
-/* In case when direct upload is enabled, slot2 and slot3 are optional
- * as long as there is support for one application image only.
- */
-#define ADD_SLOT_2_CONDITION FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
-#define ADD_SLOT_3_CONDITION FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
-#elif (CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1)
-/* For more than one application image slot2 and slot3 are required. */
-#define ADD_SLOT_2_CONDITION 1
-#define ADD_SLOT_3_CONDITION 1
-#else
-/* If neither in direct upload mode nor more than one application image
- * is supported, then slot2 and slot3 support is useless.
- */
-#define ADD_SLOT_2_CONDITION 0
-#define ADD_SLOT_3_CONDITION 0
 #endif
 
-static int
-img_mgmt_slot_to_image(int slot)
-{
-	switch (slot) {
-	case 0:
-	case 1:
-		return 0;
-#if ADD_SLOT_2_CONDITION
-	case 2:
-		return 1;
+#if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 3
+BUILD_ASSERT(FIXED_PARTITION_EXISTS(SLOT4_PARTITION) &&
+	     FIXED_PARTITION_EXISTS(SLOT5_PARTITION),
+	     "Missing partitions?");
 #endif
-#if ADD_SLOT_3_CONDITION
-	case 3:
-		return 1;
-#endif
-	default:
-		assert(0);
-	}
-	return 0;
-}
 
 /**
  * Determines if the specified area of flash is completely unwritten.
@@ -165,15 +139,27 @@ img_mgmt_flash_area_id(int slot)
 		fa_id = FIXED_PARTITION_ID(SLOT1_PARTITION);
 		break;
 
-#if ADD_SLOT_2_CONDITION
+#if FIXED_PARTITION_EXISTS(SLOT2_PARTITION)
 	case 2:
 		fa_id = FIXED_PARTITION_ID(SLOT2_PARTITION);
 		break;
 #endif
 
-#if ADD_SLOT_3_CONDITION
+#if FIXED_PARTITION_EXISTS(SLOT3_PARTITION)
 	case 3:
 		fa_id = FIXED_PARTITION_ID(SLOT3_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT4_PARTITION)
+	case 4:
+		fa_id = FIXED_PARTITION_ID(SLOT4_PARTITION);
+		break;
+#endif
+
+#if FIXED_PARTITION_EXISTS(SLOT5_PARTITION)
+	case 5:
+		fa_id = FIXED_PARTITION_ID(SLOT5_PARTITION);
 		break;
 #endif
 
@@ -234,17 +220,19 @@ static int img_mgmt_get_unused_slot_area_id(int slot)
 	return slot != -1  ? img_mgmt_flash_area_id(slot) : -1;
 #endif
 }
-#elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER == 2
+#elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
 static int img_mgmt_get_unused_slot_area_id(int image)
 {
 	int area_id = -1;
+	int slot = 0;
 
-	if (image == 0 || image == -1) {
-		if (img_mgmt_slot_in_use(1) == 0) {
-			area_id = img_mgmt_flash_area_id(1);
-		}
-	} else if (image == 1) {
-		area_id = img_mgmt_flash_area_id(3);
+	if (image == -1) {
+		image = 0;
+	}
+	slot = img_mgmt_get_opposite_slot(img_mgmt_active_slot(image));
+
+	if (!img_mgmt_slot_in_use(slot)) {
+		area_id = img_mgmt_flash_area_id(slot);
 	}
 
 	return area_id;
