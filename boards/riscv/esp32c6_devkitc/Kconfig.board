@@ -5,5 +5,5 @@
 
 config BOARD_ESP32C6_DEVKITC
 	bool "ESP32C6 Devkit-C Board"
-	depends on SOC_ESP32C6
-	select CONSOLE_HAS_DRIVER
+	depends on SOC_SERIES_ESP32C6
+
