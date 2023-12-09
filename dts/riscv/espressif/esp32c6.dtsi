@@ -15,8 +15,8 @@
 	#size-cells = <1>;
 
 	chosen {
-		zephyr,canbus = &twai;
-		zephyr,entropy = &trng0;
+		zephyr,canbus = &twai0;
+		//zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -137,9 +137,9 @@
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x6000F000 0x400>;
 			status = "disabled";
-			interrupts = <USB_INTR_SOURCE>;
+			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_USB_MODULE>;
+			clocks = <&rtc ESP32_USB_DEVICE_MODULE>;
 		};
 
 		timer0: counter@60008000 {
@@ -165,9 +165,9 @@
 		twai0: can@6000b000 {
 			compatible = "espressif,esp32-twai";
 			reg = <0x6000b000 DT_SIZE_K(4)>;
-			interrupts = <TWAI_INTR_SOURCE>;
+			interrupts = <TWAI0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
-			clocks = <&rtc ESP32_TWAI_MODULE>;
+			clocks = <&rtc ESP32_TWAI0_MODULE>;
 			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
@@ -176,7 +176,7 @@
 		spi2: spi@60081000 {
 			compatible = "espressif,esp32-spi";
 			reg = <0x60081000 DT_SIZE_K(4)>;
-			interrupts = <SPI2_INTR_SOURCE>;
+			interrupts = <GSPI2_INTR_SOURCE>; // TODO: check MSPI
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_SPI2_MODULE>;
 			dma-clk = <ESP32_GDMA_MODULE>;
@@ -231,7 +231,7 @@
 			compatible = "espressif,esp32-gdma";
 			reg = <0x60080000 DT_SIZE_K(4)>;
 			#dma-cells = <1>;
-			interrupts = <DMA_CH0_INTR_SOURCE DMA_CH1_INTR_SOURCE DMA_CH2_INTR_SOURCE>;
+			interrupts = <DMA_IN_CH1_INTR_SOURCE DMA_IN_CH1_INTR_SOURCE DMA_IN_CH2_INTR_SOURCE>; // TODO: check DMA_OUT
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_GDMA_MODULE>;
 			dma-channels = <6>;
