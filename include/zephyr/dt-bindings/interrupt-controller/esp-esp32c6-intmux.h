@@ -76,13 +76,13 @@
 #define PARL_IO_INTR_SOURCE		  63
 #define SLC0_INTR_SOURCE		  64
 #define SLC_INTR_SOURCE			  65
-#define DMA_IN_CH0_INTR_SOURCE		  66 /**< interrupt of general DMA IN channel 0, LEVEL*/
+#define DMA_IN_CH0_INTR_SOURCE		  66 /**< interrupt of general DMA IN channel 0, LEVEL*/ /** NOT SURE whether it is the interrupt for dma component in soc*/
 #define DMA_IN_CH1_INTR_SOURCE		  67 /**< interrupt of general DMA IN channel 1, LEVEL*/
 #define DMA_IN_CH2_INTR_SOURCE		  68 /**< interrupt of general DMA IN channel 2, LEVEL*/
 #define DMA_OUT_CH0_INTR_SOURCE		  69 /**< interrupt of general DMA OUT channel 0, LEVEL*/
 #define DMA_OUT_CH1_INTR_SOURCE		  70 /**< interrupt of general DMA OUT channel 1, LEVEL*/
 #define DMA_OUT_CH2_INTR_SOURCE		  71 /**< interrupt of general DMA OUT channel 2, LEVEL*/
-#define GSPI2_INTR_SOURCE		  72
+#define GSPI2_INTR_SOURCE		  72 /** NOT SURE whether it corresponds to SPI2 **/
 #define AES_INTR_SOURCE			  73 /**< interrupt of AES accelerator, level*/
 #define SHA_INTR_SOURCE			  74 /**< interrupt of SHA accelerator, level*/
 #define RSA_INTR_SOURCE			  75 /**< interrupt of RSA accelerator, level*/
