@@ -27,6 +27,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "espressif,riscv";
+            riscv,isa = "rv32imac";
 			reg = <0>;
 		};
 	};
@@ -61,7 +62,7 @@
 			status = "okay";
 		};
 
-		systimer0: systimer@6000A000 {
+		systimer0: systimer@6000a000 {
 			compatible = "espressif,esp32-systimer";
 			reg = <0x6000A000 0x80>;
 			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE>;
@@ -81,6 +82,22 @@
 				reg = <0 0x400000>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+			};
+		};
+
+		rtc: rtc@60096000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x60096000 0x1000>;
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			rtc_timer: rtc_timer {
+				compatible = "espressif,esp32-rtc-timer";
+				slow-clk-freq = <ESP32_RTC_FAST_CLK_FREQ_17M>;
+				interrupts = <LP_RTC_TIMER_INTR_SOURCE>;
+				interrupt-parent = <&intc>;
+				status = "okay";
 			};
 		};
 
@@ -133,7 +150,7 @@
 			status = "disabled";
 		};
 
-		usb_serial: uart@6000F000 {
+		usb_serial: uart@6000f000 {
 			compatible = "espressif,esp32-usb-serial";
 			reg = <0x6000F000 0x400>;
 			status = "disabled";
@@ -144,7 +161,7 @@
 
 		timer0: counter@60008000 {
 			compatible = "espressif,esp32-timer";
-			reg = <0x6001F000 DT_SIZE_K(4)>;
+			reg = <0x60008000 DT_SIZE_K(4)>;
 			group = <0>;
 			index = <0>;
 			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
@@ -168,7 +185,7 @@
 			interrupts = <TWAI0_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TWAI0_MODULE>;
-			sjw = <1>;
+			//sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
 		};
