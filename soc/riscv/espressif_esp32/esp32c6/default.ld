@@ -16,19 +16,19 @@
 #include <zephyr/linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_0_seg
-#define RODATA_REGION drom0_0_seg
+#define RODATA_REGION drom_seg
 #define IRAM_REGION  iram0_0_seg
-#define FLASH_CODE_REGION irom0_0_seg
+#define FLASH_CODE_REGION irom_seg
 
 #define ROMABLE_REGION ROM
 
-#define SRAM_IRAM_START     0x4037C000
-#define SRAM_DRAM_START     0x3FC7C000
-#define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C3 */
+#define SRAM_IRAM_START     0x40800000
+#define SRAM_DRAM_START     0x40800000
+#define ICACHE_SIZE         0x8000 /* ICache size is fixed to 32KB on ESP32-C6 */
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x403D0000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
-#define SRAM_IRAM_ORG       (SRAM_IRAM_START + ICACHE_SIZE)
-#define SRAM_DRAM_ORG       (SRAM_DRAM_START + ICACHE_SIZE)
+#define SRAM_DRAM_END       0x4086E610 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_IRAM_ORG       (SRAM_IRAM_START)
+#define SRAM_DRAM_ORG       (SRAM_DRAM_START)
 #define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
 
 #ifdef CONFIG_FLASH_SIZE
@@ -47,6 +47,15 @@
 #define IROM_SEG_ALIGN 0x10000
 #endif
 
+/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+ * Executing directly from LMA is not possible. */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
+
+#define IDRAM0_2_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 8)
+
+#define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
+
 /* Global symbols required for espressif hal build */
 MEMORY
 {
@@ -55,12 +64,12 @@ MEMORY
   ROM (RX): org = 0x40, len = FLASH_SIZE - 0x40
 
   iram0_0_seg(RX): org = SRAM_IRAM_ORG, len = I_D_SRAM_SIZE
-  irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
+  irom_seg(RX): org = IROM_SEG_ORG, len = IDRAM0_2_SEG_SIZE - 0x20
 
-  drom0_0_seg (R) : org = 0x3C000040, len = FLASH_SIZE - 0x40
-  dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = I_D_SRAM_SIZE
+  dram0_0_seg(RW): org = SRAM_DRAM_ORG, len = DRAM0_0_SEG_LEN
+  drom_seg (R) : org = 0x42000040, len = FLASH_SIZE - 0x40
 
-  rtc_iram_seg(RWX): org = 0x50000000, len = 0x2000
+  lp_ram_seg(RWX): org = 0x50000000, len = 0x4000
 
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
@@ -68,11 +77,15 @@ MEMORY
 }
 
 
-/* The line below defines location alias for .rtc.data section
- * As C3 only has RTC fast memory, this is not configurable like
- * on other targets.
+/**
+ *  The lines below define location alias for .rtc.data section
+ *  C6 has no distinguished LP(RTC) fast and slow memory sections, instead, there is a unified LP_RAM section
+ *  Thus, the following region segments are not configurable like on other targets
  */
-REGION_ALIAS("rtc_slow_seg", rtc_iram_seg);
+REGION_ALIAS("rtc_iram_seg", lp_ram_seg );
+REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
+REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
+REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -123,6 +136,7 @@ SECTIONS
 
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
   {
+    _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)
@@ -134,8 +148,8 @@ SECTIONS
     #include <snippets-rodata.ld>
 
     . = ALIGN(4);
-    *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata)
-    *(EXCLUDE_FILE (*libarch__xtensa__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata.*)
+    *(EXCLUDE_FILE (*libarch__riscv__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata)
+    *(EXCLUDE_FILE (*libarch__riscv__core.a:* *libkernel.a:fatal.* *libkernel.a:init.* *libzephyr.a:cbprintf_complete* *libzephyr.a:log_core.* *libzephyr.a:log_backend_uart.* *libdrivers__flash.a:esp32_mp.* *libzephyr.a:log_output.* *libzephyr.a:loader.* *libdrivers__flash.a:flash_esp32.* *libdrivers__serial.a:uart_esp32.* *libzephyr.a:spi_flash_rom_patch.*) .rodata.*)
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
@@ -167,27 +181,15 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _thread_local_start = ABSOLUTE(.);
-    *(.tdata)
-    *(.tdata.*)
-    *(.tbss)
-    *(.tbss.*)
     *(.srodata)
     *(.srodata.*)
     *(.rodata)
     *(.rodata.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
-    _thread_local_end = ABSOLUTE(.);
-    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
-   * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
   #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
@@ -195,12 +197,14 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
+  #include <zephyr/linker/thread-local-storage.ld>
+  #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
   SECTION_PROLOGUE(_RODATA_SECTION_END,,)
   {
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -230,6 +234,7 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     *libesp32.a:panic.*(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
+    *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__l2__ethernet.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__lib__config.a:(.literal .text .literal.* .text.*)
     *libsubsys__net__ip.a:(.literal .text .literal.* .text.*)
@@ -239,7 +244,7 @@ SECTIONS
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:esp32c6_sys_timer.*(.literal .text .literal.* .text.*)
+    *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
@@ -248,6 +253,8 @@ SECTIONS
     *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
     *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:loader.*(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
@@ -310,8 +317,6 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-  #include <snippets-sections.ld>
-
   .dram0.data :
   {
     . = ALIGN(4);
@@ -338,6 +343,8 @@ SECTIONS
     *libzephyr.a:log_core.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libzephyr.a:cache_hal.*(.rodata .rodata.*)
+    *libzephyr.a:mmu_hal.*(.rodata .rodata.*)
     *libzephyr.a:loader.*(.rodata .rodata.*)
     *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
@@ -402,12 +409,12 @@ SECTIONS
   {
     . = SIZEOF(_RODATA_SECTION_NAME);
     . = ALIGN(0x10000) + 0x20;
-    _rodata_reserved_start = .;
   } GROUP_LINK_IN(FLASH_CODE_REGION)
 
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
     _stext = .;
+    _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
@@ -435,6 +442,7 @@ SECTIONS
     . += 16;
 
     _text_end = ABSOLUTE(.);
+    _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
     /**
