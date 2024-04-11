@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_ESP32C6
-	bool "ESP32C6"
 	select RISCV
 	select RISCV_GP
 	select DYNAMIC_INTERRUPTS
@@ -13,9 +12,24 @@ config SOC_SERIES_ESP32C6
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select HAS_ESPRESSIF_HAL
-	select SOC_FAMILY_ESP32
 	select XIP if !MCUBOOT
 	select HAS_PM
 	select HAS_POWEROFF
 	help
 	  Enable support for Espressif ESP32-C6
+
+if SOC_SERIES_ESP32C6
+
+config IDF_TARGET_ARCH_RISCV
+	bool
+	default y
+
+config IDF_TARGET_ARCH
+	string
+	default "riscv"
+
+config IDF_TARGET_ESP32C6
+	bool "ESP32C6 as target board"
+	default y
+
+endif # SOC_SERIES_ESP32C6

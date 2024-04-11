@@ -34,7 +34,7 @@
 #ifdef CONFIG_FLASH_SIZE
 #define FLASH_SIZE CONFIG_FLASH_SIZE
 #else
-#define FLASH_SIZE 0x400000
+#define FLASH_SIZE 0x800000
 #endif
 
 #ifdef CONFIG_BOOTLOADER_ESP_IDF
@@ -56,6 +56,8 @@
 
 #define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
 
+#define RESERVE_RTC_MEM (0 + (24))
+
 /* Global symbols required for espressif hal build */
 MEMORY
 {
@@ -70,6 +72,15 @@ MEMORY
   drom_seg (R) : org = 0x42000040, len = FLASH_SIZE - 0x40
 
   lp_ram_seg(RWX): org = 0x50000000, len = 0x4000
+
+  /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
+     It reserves the amount of LP memory that we use for this memory segment.
+     This segment is intended for keeping:
+       - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
+       - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
+     The aim of this is to keep data that will not be moved around and have a fixed address.
+  */
+  lp_reserved_seg(RW) :        org = 0x50000000 + 0x4000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
@@ -86,6 +97,7 @@ REGION_ALIAS("rtc_iram_seg", lp_ram_seg );
 REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
 REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
 REGION_ALIAS("rtc_data_location", rtc_iram_seg );
+REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg )
 
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -244,7 +256,7 @@ SECTIONS
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
+    *libdrivers__timer.a:esp32_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
@@ -276,15 +288,6 @@ SECTIONS
     . = ALIGN(4);
     _init_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
-
-  .dram0.dummy (NOLOAD):
-  {
-    /**
-    * This section is required to skip .iram0.text area because iram0_0_seg and
-    * dram0_0_seg reflect the same address space on different buses.
-    */
-    . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
-  } GROUP_LINK_IN(RAMABLE_REGION)
 
  /* Shared RAM */
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -331,8 +334,6 @@ SECTIONS
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
 
     /* All dependent functions should be placed in DRAM to avoid issue
@@ -389,6 +390,9 @@ SECTIONS
     . = ALIGN(16);
     *(.iram.data)
     *(.iram.data*)
+    _iram_data_start = ABSOLUTE(.);
+
+    _iram_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
   .iram0.bss (NOLOAD) :
@@ -397,9 +401,19 @@ SECTIONS
     *(.iram.bss)
     *(.iram.bss*)
 
+    _iram_bss_end = ABSOLUTE(.);
     . = ALIGN(16);
     _iram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
+
+  /**
+   * This section is required to skip .iram0.text area because iram0_0_seg and
+   * dram0_0_seg reflect the same address space on different buses.
+   */
+  .dram0.dummy (NOLOAD):
+  {
+    . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
+  } GROUP_LINK_IN(RAMABLE_REGION)
 
   _image_irom_start = LOADADDR(.flash.text);
   _image_irom_size = LOADADDR(.flash.text) + SIZEOF(.flash.text) - _image_irom_start;
@@ -515,3 +529,6 @@ SECTIONS
     KEEP(*(.gnu.attributes))
     }
 }
+
+ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")

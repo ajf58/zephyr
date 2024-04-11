@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources(
-  idle.c
   vectors.S
   soc_irq.S
   soc_irq.c
   soc.c
+  ../common/loader.c
   )
+
+zephyr_include_directories(.)
 
 zephyr_library_sources_ifdef(CONFIG_PM power.c)
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
@@ -69,4 +71,3 @@ if(CONFIG_MCUBOOT)
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
 endif()
-
