@@ -4,21 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc/rtc_cntl_reg.h>
+//#include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
+#include <soc/ext_mem_defs.h>
 #include <soc/gpio_reg.h>
-#include <soc/syscon_reg.h>
+//#include <soc/syscon_reg.h>
 #include <soc/system_reg.h>
-#include <soc/cache_memory.h>
-#include "hal/soc_ll.h"
 #include <riscv/interrupt.h>
 #include <soc/interrupt_reg.h>
 #include <soc/periph_defs.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32c6.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 #include <zephyr/arch/riscv/arch.h>
 
@@ -55,13 +54,13 @@ uint32_t soc_intr_get_next_source(void)
 	uint32_t status;
 	uint32_t source;
 
-	status = REG_READ(INTERRUPT_CORE0_INTR_STATUS_0_REG) &
+	status = REG_READ(INTMTX_CORE0_INT_STATUS_REG_0_REG) &
 		esp_intr_get_enabled_intmask(0);
 
 	if (status) {
 		source = __builtin_ffs(status) - 1;
 	} else {
-		status = REG_READ(INTERRUPT_CORE0_INTR_STATUS_1_REG) &
+		status = REG_READ(INTMTX_CORE0_INT_STATUS_REG_1_REG) &
 			esp_intr_get_enabled_intmask(1);
 		source = (__builtin_ffs(status) - 1 + ESP32C6_INTSTATUS_SLOT1_THRESHOLD);
 	}

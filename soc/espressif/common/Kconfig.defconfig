@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_ESP32C3
+if SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 
 config GEN_ISR_TABLES
 	default y
@@ -49,7 +49,7 @@ config ROM_START_OFFSET
 
 endif # BOOTLOADER_MCUBOOT
 
-endif # SOC_SERIES_ESP32C3
+endif # SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
 
 if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 

@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32C6
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  ESP32C6
+
+config SOC_ESP32C6
+	bool
+	select SOC_SERIES_ESP32C6
+	help
+	  ESP32C6
+
+config SOC_SERIES
+	default "esp32c6" if SOC_SERIES_ESP32C6
+
+config SOC
+	default "esp32c6" if SOC_SERIES_ESP32C6
+
+config SOC_PART_NUMBER
+	default "ESP32C6" if SOC_ESP32C6
+
+if SOC_SERIES_ESP32C6
+
+config ESP32_PHY_MAX_WIFI_TX_POWER
+	int "Max WiFi TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for WiFi radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_PHY_MAX_TX_POWER
+	int
+	default ESP32_PHY_MAX_WIFI_TX_POWER
+
+endif
