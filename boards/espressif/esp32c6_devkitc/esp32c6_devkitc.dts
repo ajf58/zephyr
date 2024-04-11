@@ -24,22 +24,6 @@
 		watchdog0 = &wdt0;
 	};
 
-	power-states {
-		light_sleep: light_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "standby";
-			min-residency-us = <200>;
-			exit-latency-us = <60>;
-		};
-
-		deep_sleep: deep_sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "soft-off";
-			min-residency-us = <660>;
-			exit-latency-us = <105>;
-		};
-	};
-
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_button1: button_1 {
@@ -51,7 +35,6 @@
 
 &cpu0 {
 	clock-frequency = <ESP32_CLK_CPU_160M>;
-	cpu-power-states = <&deep_sleep &light_sleep>;
 };
 
 &uart0 {
@@ -71,14 +54,6 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-};
-
-&gpio0 {
-	status = "okay";
-};
-
-&wdt0 {
-	status = "okay";
 };
 
 &timer0 {
