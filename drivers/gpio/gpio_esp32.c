@@ -33,17 +33,21 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
-/* gpio structs in esp32c3 series are different from xtensa ones */
-#define out out.data
-#define in in.data
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
+/* gpio structs in RISCV series are different from xtensa ones */
+#define out out.val
+#define in in.val
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
 /* arch_curr_cpu() is not available for riscv based chips */
 #define CPU_ID()  0
-#define ISR_HANDLER isr_handler_t
 #else
 #define CPU_ID() arch_curr_cpu()->id
+#endif
+
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#define ISR_HANDLER isr_handler_t
+#else
 #define ISR_HANDLER intr_handler_t
 #endif
 
