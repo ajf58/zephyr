@@ -6,3 +6,8 @@ toolchain:
   - zephyr
 supported:
   - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif
