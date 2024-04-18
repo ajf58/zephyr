@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
