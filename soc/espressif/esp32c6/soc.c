@@ -51,7 +51,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
 
-	//esp_reset_reason_init();
+	esp_reset_reason_init();
 #ifndef CONFIG_MCUBOOT
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
