@@ -43,31 +43,16 @@ extern void esp_reset_reason_init(void);
  */
 void __attribute__((section(".iram1"))) __esp_platform_start(void)
 {
-#ifdef CONFIG_RISCV_GP
-	/* Configure the global pointer register
-	 * (This should be the first thing startup does, as any other piece of code could be
-	 * relaxed by the linker to access something relative to __global_pointer$)
-	 */
-	__asm__ __volatile__(".option push\n"
-						".option norelax\n"
-						"la gp, __global_pointer$\n"
-						".option pop");
-#endif /* CONFIG_RISCV_GP */
-
 	__asm__ __volatile__("la t0, _esp32c6_vector_table\n"
 						"csrw mtvec, t0\n");
-	z_bss_zero();
 
+	z_bss_zero();
+	
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
 
 	//esp_reset_reason_init();
-#ifdef CONFIG_MCUBOOT
-	/* MCUboot early initialisation.
-	 */
-	bootloader_init();
-
-#else
+#ifndef CONFIG_MCUBOOT
 	/* ESP-IDF 2nd stage bootloader enables RTC WDT to check on startup sequence
 	 * related issues in application. Hence disable that as we are about to start
 	 * Zephyr environment.
@@ -101,13 +86,13 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #ifdef CONFIG_SOC_FLASH_ESP32
 	esp_mspi_pin_init();
 
-    /**
-     * This function initialise the Flash chip to the user-defined settings.
-     *
-     * In bootloader, we only init Flash (and MSPI) to a preliminary state, for being flexible to
-     * different chips.
-     * In this stage, we re-configure the Flash (and MSPI) to required configuration
-     */
+	/**
+	 * This function initialise the Flash chip to the user-defined settings.
+	 *
+	 * In bootloader, we only init Flash (and MSPI) to a preliminary
+	 * state, for being flexible to different chips.
+	 * In this stage, we re-configure the Flash (and MSPI) to required configuration
+	 */
 	spi_flash_init_chip_state();
 
 	esp_mmu_map_init();
@@ -125,7 +110,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	spi_flash_guard_set(&g_flash_guard_default_ops);
 #endif
 
-#endif /* CONFIG_MCUBOOT */
+#endif /* !CONFIG_MCUBOOT */
 
 	/*Initialize the esp32c3 interrupt controller */
 	esp_intr_initialize();
