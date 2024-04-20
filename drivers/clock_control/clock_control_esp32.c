@@ -26,10 +26,16 @@
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <esp32s3/rom/rtc.h>
 #include <soc/dport_reg.h>
-#elif CONFIG_SOC_SERIES_ESP32C3
+#elif defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define DT_CPU_COMPAT espressif_riscv
+#if defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #include <esp32c3/rom/rtc.h>
+#else
+#include <zephyr/dt-bindings/clock/esp32c6_clock.h>
+#include <esp32c6/rom/rtc.h>
+#include <soc/dport_access.h>
+#endif
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
 #include <soc/rtc.h>
@@ -40,7 +46,9 @@
 #include <esp_rom_uart.h>
 #include <soc/rtc.h>
 #include <soc/i2s_reg.h>
+#ifndef CONFIG_SOC_SERIES_ESP32C6
 #include <soc/apb_ctrl_reg.h>
+#endif
 #include <soc/timer_group_reg.h>
 #include <hal/clk_gate_ll.h>
 #include <soc.h>
@@ -511,6 +519,13 @@ static void esp32_clock_perip_init(void)
 	periph_module_enable(PERIPH_RNG_MODULE);
 }
 #endif /* CONFIG_SOC_SERIES_ESP32C3 */
+
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+static void esp32_clock_perip_init(void)
+{
+	/* TODO implement */
+}
+#endif
 
 static int clock_control_esp32_init(const struct device *dev)
 {
