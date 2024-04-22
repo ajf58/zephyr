@@ -870,6 +870,8 @@ flagged.
         "CLOCK_STM32_SYSCLK_SRC_",
         "CMU",
         "COMPILER_RT_RTLIB",
+        "ULP_COPROC_ENABLED",		# Added when coprocessor is supported
+        "ULP_COPROC_RESERVE_MEM",	# Added when coprocessor is supported
         "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
         "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
         "COUNTER_RTC_STM32_CLOCK_SRC",
