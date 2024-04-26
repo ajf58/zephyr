@@ -5,7 +5,6 @@
  */
 #include <soc/soc_caps.h>
 #include <soc/soc.h>
-#include <soc/interrupt_core0_reg.h>
 #include <soc/periph_defs.h>
 #include <soc/system_reg.h>
 #include <hal/systimer_hal.h>
