@@ -129,6 +129,7 @@ config ESPTOOLPY_FLASHFREQ
 choice ESPTOOLPY_FLASHSIZE
 	prompt "Flash size"
 	default ESPTOOLPY_FLASHSIZE_2MB
+	default ESPTOOLPY_FLASHSIZE_4MB if SOC_ESP32C6_WROOM_01_N4
 	help
 	  SPI flash size, in megabytes
 

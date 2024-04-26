@@ -7,6 +7,12 @@ config SOC_SERIES_ESP32C6
 	help
 	  ESP32C6
 
+config SOC_ESP32C6_WROOM_01_N4
+	bool
+	select SOC_ESP32C6
+	help
+	  ESP32C6_WROOM_01_N4
+
 config SOC_ESP32C6
 	bool
 	select SOC_SERIES_ESP32C6
@@ -20,6 +26,7 @@ config SOC
 	default "esp32c6" if SOC_SERIES_ESP32C6
 
 config SOC_PART_NUMBER
+	default "ESP32C6_WROOM_01_N4" if SOC_ESP32C6_WROOM_01_N4
 	default "ESP32C6" if SOC_ESP32C6
 
 if SOC_SERIES_ESP32C6
