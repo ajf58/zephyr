@@ -74,7 +74,7 @@
 				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_90K>;
 				interrupts = <LP_RTC_TIMER_INTR_SOURCE>;
 				interrupt-parent = <&intc>;
-				status = "okay";
+				status = "disabled";
 			};
 		};
 
