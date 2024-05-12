@@ -7,7 +7,6 @@
 #define DT_DRV_COMPAT espressif_esp32_timer
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
 #include <periph_ctrl.h>
 #include <driver/timer_types_legacy.h>
