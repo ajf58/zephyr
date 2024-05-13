@@ -129,6 +129,26 @@
 			clocks = <&rtc ESP32_UART0_MODULE>;
 		};
 
+		timer0: counter@60008000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x60008000 DT_SIZE_K(4)>;
+			group = <0>;
+			index = <0>;
+			interrupts = <TG0_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		timer1: counter@60009000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x60009000 DT_SIZE_K(4)>;
+			group = <1>;
+			index = <0>;
+			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		uart1: uart@60010000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60010000 DT_SIZE_K(4)>;
