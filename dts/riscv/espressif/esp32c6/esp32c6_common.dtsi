@@ -13,6 +13,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	aliases {
+		die-temp0 = &coretemp;
+	};
+
 	chosen {
 		zephyr,flash-controller = &flash;
 	};
@@ -146,6 +150,13 @@
 			index = <0>;
 			interrupts = <TG1_T0_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		coretemp: coretemp@600e0058 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x600e0058 0x4>;
 			status = "disabled";
 		};
 
