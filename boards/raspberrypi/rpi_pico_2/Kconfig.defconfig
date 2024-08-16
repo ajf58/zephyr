@@ -16,4 +16,4 @@ endif # I2C_DW
 config USB_SELF_POWERED
 	default n
 
-endif # BOARD_RPI_PICO
+endif # BOARD_RPI_PICO_2

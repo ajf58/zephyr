@@ -19,7 +19,7 @@ endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${RPI_PICO_DEBUG_ADAPTER}.cfg]")
 board_runner_args(openocd --cmd-pre-init "transport select swd")
-board_runner_args(openocd --cmd-pre-init "source [find target/rp2350.cfg]")
+board_runner_args(openocd --cmd-pre-init "source [find target/rp2040.cfg]")
 
 # The adapter speed is expected to be set by interface configuration.
 # But if not so, set 2000 to adapter speed.
