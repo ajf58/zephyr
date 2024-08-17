@@ -6,14 +6,24 @@
 
 config SOC_RP2040
 	bool
-	select SOC_SERIES_RP2XXX
+	select SOC_SERIES_RP20XX
 
-config SOC_SERIES_RP2XXX
+config SOC_RP2350
+	bool
+	select SOC_SERIES_RP23XX
+
+config SOC_SERIES_RP20XX
+	bool
+	select SOC_FAMILY_RPI_PICO
+
+config SOC_SERIES_RP23XX
 	bool
 	select SOC_FAMILY_RPI_PICO
 
 config SOC_SERIES
-	default "rp2xxx" if SOC_SERIES_RP2XXX
+	default "rp20xx" if SOC_SERIES_RP20XX
+	default "rp23xx" if SOC_SERIES_RP23XX
 
 config SOC
 	default "rp2040" if SOC_RP2040
+	default "rp2350" if SOC_RP2350

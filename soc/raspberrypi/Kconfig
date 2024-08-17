@@ -4,7 +4,7 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_RPI_PICO
+if SOC_FAMILY_RPI_PICO || SOC_FAMILY_RPI_PICO_2
 
 rsource "*/Kconfig"
 

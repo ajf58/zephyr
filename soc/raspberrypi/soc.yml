@@ -4,3 +4,4 @@ family:
   - name: rp2xxx
     socs:
     - name: rp2040
+    - name: rp2350

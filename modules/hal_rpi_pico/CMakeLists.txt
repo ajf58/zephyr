@@ -6,9 +6,9 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_library()
 
   set(rp2_common_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/rp2_common)
-  set(rp2040_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/rp2040)
+  set(rp2xxx_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/${CONFIG_SOC})
   set(common_dir ${ZEPHYR_HAL_RPI_PICO_MODULE_DIR}/src/common)
-  set(boot_stage_dir ${rp2040_dir}/boot_stage2)
+  set(boot_stage_dir ${rp2xxx_dir}/boot_stage2)
 
   # The Second Stage Bootloader is only linked to the app that resides
   # at 0x100. Therefore, only if the app's offset is 0x100, the second
@@ -46,7 +46,11 @@ if(CONFIG_HAS_RPI_PICO)
       zephyr_library_sources(${rp2_bootloader_asm})
   endif()
 
-  zephyr_compile_definitions(PICO_RP2040)
+  if(CONFIG_SOC_RP2040)
+      zephyr_compile_definitions(PICO_RP2040)
+  elseif(CONFIG_SOC_RP2350)
+      zephyr_compile_definitions(PICO_RP2350)
+  endif()
 
   # Pico sources and headers necessary for every build.
   # These contain definitions and implementation used mostly for
@@ -58,7 +62,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/hardware_xosc/xosc.c
     ${rp2_common_dir}/hardware_watchdog/watchdog.c
     ${rp2_common_dir}/pico_bootrom/bootrom.c
-    ${rp2040_dir}/pico_platform/platform.c
+    ${rp2xxx_dir}/pico_platform/platform.c
   )
 
   zephyr_include_directories(
@@ -81,9 +85,9 @@ if(CONFIG_HAS_RPI_PICO)
     ${rp2_common_dir}/pico_platform_panic/include
     ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/boot_picobin_headers/include
-    ${rp2040_dir}/hardware_regs/include
-    ${rp2040_dir}/hardware_structs/include
-    ${rp2040_dir}/pico_platform/include
+    ${rp2xxx_dir}/hardware_regs/include
+    ${rp2xxx_dir}/hardware_structs/include
+    ${rp2xxx_dir}/pico_platform/include
     ${CMAKE_CURRENT_LIST_DIR}
   )
 
