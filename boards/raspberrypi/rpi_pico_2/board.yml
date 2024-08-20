@@ -2,4 +2,4 @@ board:
   name: rpi_pico_2
   vendor: raspberrypi
   socs:
-  - name: rp2040
+  - name: rp2350

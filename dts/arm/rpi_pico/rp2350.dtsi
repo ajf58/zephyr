@@ -330,7 +330,7 @@
 		vreg: vreg@40064000 {
 			compatible = "raspberrypi,core-supply-regulator";
 			reg = <0x40064000 1>;
-			status = "okay";
+			status = "disabled";
 			raspberrypi,brown-out-detection;
 			raspberrypi,brown-out-threshold = <860000>;
 		};

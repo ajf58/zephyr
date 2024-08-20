@@ -25,11 +25,13 @@ config SOC_SERIES_RP23XX
 	select HAS_RPI_PICO
 	select XIP
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select PLATFORM_SPECIFIC_INIT
 	help
 		Enable support for Raspberry Pi RP23 MCU series
 
 config RP2_REQUIRES_SECOND_STAGE_BOOT
 	bool
+	depends on SOC_SERIES_RP20XX
 	default y if FLASH_LOAD_OFFSET = 0x100
 
 # Flash type used by the SoC. The board should select the one used.

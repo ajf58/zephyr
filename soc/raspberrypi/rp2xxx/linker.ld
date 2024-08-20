@@ -26,4 +26,25 @@ SECTIONS
 }
 #endif /* CONFIG_RP2_REQUIRES_SECOND_STAGE_BOOT */
 
+//#if CONFIG_RP2_REQUIRES_IMAGE_DEF
+MEMORY
+{
+	IMAGE_DEF_FLASH (r) : ORIGIN = 0x10000000, LENGTH = 128
+}
+
+SECTIONS
+{
+	.image_def : {
+		//KEEP(*(.embedded_block))
+		LONG(0xffffded3) /* PICOBIN_BLOCK_MARKER_START */
+		LONG(0x10210142)
+		LONG(0x00000203)
+		LONG(0x10000200)
+		LONG(0x000003ff) /* Last Item in Block */
+		LONG(0x00000000) /* End of block loop */
+		LONG(0xab123579) /* PICOBIN_BLOCK_MARKER_END */
+	} > IMAGE_DEF_FLASH
+}
+//#endif
+
 #include <zephyr/arch/arm/cortex_m/scripts/linker.ld>

@@ -23,6 +23,7 @@
 #include <hardware/regs/resets.h>
 #include <hardware/clocks.h>
 #include <hardware/resets.h>
+#include <pico/runtime_init.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -39,3 +40,12 @@ void __attribute__((noreturn)) panic(const char *fmt, ...)
 	vprintf(fmt, args);
 	k_fatal_halt(K_ERR_CPU_EXCEPTION);
 }
+
+#if CONFIG_PLATFORM_SPECIFIC_INIT
+
+void z_arm_platform_init(void)
+{
+	runtime_init_per_core_enable_coprocessors();
+}
+
+#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
