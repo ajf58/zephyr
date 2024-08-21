@@ -601,7 +601,6 @@ void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *t
 
 static int clock_control_rpi_pico_init(const struct device *dev)
 {
-	return 0;
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	struct clock_control_rpi_pico_data *data = dev->data;
 	clocks_hw_t *clocks_regs = config->clocks_regs;
@@ -618,7 +617,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_SYSCFG_BITS |
 		      RESETS_RESET_PLL_SYS_BITS));
 
-	unreset_block_wait(RESETS_RESET_BITS &
+	unreset_block(RESETS_RESET_BITS &
 			   ~(RESETS_RESET_ADC_BITS |
 #if defined(SOC_RP2040)
 			     RESETS_RESET_RTC_BITS |
@@ -628,7 +627,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 			     RESETS_RESET_USBCTRL_BITS | RESETS_RESET_PWM_BITS));
 
 	/* Start tick in watchdog */
-	//watchdog_start_tick(CLOCK_FREQ_xosc /1000000);
+	watchdog_start_tick(CLOCK_FREQ_xosc /1000000);
 
 	clocks_regs->resus.ctrl = 0;
 
@@ -714,7 +713,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 		return ret;
 	}
 
-	unreset_block_wait(RESETS_RESET_BITS);
+	unreset_block(RESETS_RESET_BITS);
 
 	if (IS_ENABLED(CONFIG_RPI_PICO_ROSC_USE_MEASURED_FREQ)) {
 		data->rosc_freq =
