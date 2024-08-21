@@ -339,6 +339,7 @@
 
 	pinctrl: pin-controller {
 		compatible = "raspberrypi,pico-pinctrl";
+		status = "okay";
 	};
 };
 
